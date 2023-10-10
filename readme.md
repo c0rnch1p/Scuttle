@@ -18,19 +18,19 @@ network tools more accessible and efficient for users.
 #### Installation
 ##
 ##### Depends
-• wget: The non-interactive network downloader  
-• tor: Free software for enabling anonymous communication  
-• proxychains-ng: redirect TCP traffic of running programs  
-• systemd: Suite providing system and service manager  
-• networkmanager: Dynamic network control and configuration  
-• iptables: Administration tool for packet filtering and NAT  
-• ufw: Uncomplicated Firewall  
-• firefox: Free and open source web browser  
-• nmap: Network exploration tool and port scanner  
 • bat: Clone of cat with syntax highlighting  
+• firefox: Free and open source web browser  
 • highlight: Universal syntax highlighter  
-• sudo: Execute a command as another user  
+• iptables: Administration tool for packet filtering and NAT  
 • journalctl: Query the systemd journal
+• networkmanager: Dynamic network control and configuration  
+• nmap: Network exploration tool and port scanner  
+• proxychains(-ng): redirect TCP traffic of running programs  
+• sudo: Execute a command as another user  
+• systemd: Suite providing system and service manager  
+• tor: Free software for enabling anonymous communication  
+• ufw: Uncomplicated Firewall  
+• wget: The non-interactive network downloader  
 ##### Mac & Linux
 1. Open a terminal.
 2. Clone this repository:
