@@ -22,7 +22,7 @@ network tools more accessible and efficient for users.
 • firefox: Free and open source web browser  
 • highlight: Universal syntax highlighter  
 • iptables: Administration tool for packet filtering and NAT  
-• journalctl: Query the systemd journal
+• journalctl: Query the systemd journal  
 • networkmanager: Dynamic network control and configuration  
 • nmap: Network exploration tool and port scanner  
 • proxychains(-ng): redirect TCP traffic of running programs  
@@ -30,7 +30,7 @@ network tools more accessible and efficient for users.
 • systemd: Suite providing system and service manager  
 • tor: Free software for enabling anonymous communication  
 • ufw: Uncomplicated Firewall  
-• wget: The non-interactive network downloader  
+• wget: The non-interactive network downloader
 ##### Mac & Linux
 1. Open a terminal.
 2. Clone this repository:
