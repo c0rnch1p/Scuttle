@@ -1,0 +1,67 @@
+#!/bin/bash
+
+curIptablesPol(){
+    if command sudo iptables -L -v -n | grep -q 'INPUT (policy DROP' &&\
+    command sudo iptables -L -v -n | grep -q 'FORWARD (policy DROP' &&\
+    command sudo iptables -L -v -n | grep -q 'OUTPUT (policy DROP' &&\
+    command sudo iptables -L -v -n | grep -q 'ctstate RELATED,ESTABLISHED'; then
+    	CURPOL='drop all policy'
+    elif command sudo iptables -L -v -n | grep -q 'INPUT (policy DROP' &&\
+    command sudo iptables -L -v -n | grep -q 'FORWARD (policy DROP' &&\
+    command sudo iptables -L -v -n | grep -q 'OUTPUT (policy ACCEPT' &&\
+    command sudo iptables -L -v -n | grep -q 'ctstate RELATED,ESTABLISHED'; then
+    	CURPOL='default policy'
+    elif command sudo iptables -L -v -n | grep -q 'INPUT (policy ACCEPT' &&\
+    command sudo iptables -L -v -n | grep -q 'FORWARD (policy ACCEPT' &&\
+    command sudo iptables -L -v -n | grep -q 'OUTPUT (policy ACCEPT' &&\
+    command sudo iptables -L -v -n | grep -q 'ctstate RELATED,ESTABLISHED'; then
+    	CURPOL='up all policy'
+    elif command sudo iptables -L -v -n | grep -q 'INPUT (policy DROP' &&\
+    command sudo iptables -L -v -n | grep -q 'FORWARD (policy DROP' &&\
+    command sudo iptables -L -v -n | grep -q 'OUTPUT (policy ACCEPT' &&\
+    command sudo iptables -L -v -n | grep -q 'tcp dpts:20:21'; then
+    	CURPOL='drop file transfers'
+    elif command sudo iptables -L -v -n | grep -q 'INPUT (policy DROP' &&\
+    command sudo iptables -L -v -n | grep -q 'FORWARD (policy DROP' &&\
+    command sudo iptables -L -v -n | grep -q 'OUTPUT (policy ACCEPT' &&\
+    command sudo iptables -L -v -n | grep -q 'tcp dpt:23' &&\
+    command sudo iptables -L -v -n |  grep -q 'tcp dpt:80'; then
+    	CURPOL='drop insecure protocols'
+    elif command sudo iptables -L -v -n | grep -q 'INPUT (policy DROP' &&\
+    command sudo iptables -L -v -n | grep -q 'FORWARD (policy DROP' &&\
+    command sudo iptables -L -v -n | grep -q 'OUTPUT (policy ACCEPT' &&\
+    command sudo iptables -L -v -n | grep -q 'tcp dpt:22'; then
+    	CURPOL='drop ssh requests'
+    elif command sudo iptables -L -v -n | grep -q 'INPUT (policy DROP' &&\
+    command sudo iptables -L -v -n | grep -q 'FORWARD (policy DROP' &&\
+    command sudo iptables -L -v -n | grep -q 'OUTPUT (policy DROP'; then
+    	CURPOL='network lockdown'
+    else CURPOL='default'    	
+	fi
+}
+
+MAXLEN=0
+curIptablesPol
+STATUSCMD="$(echo -e "IPTABLES: $CURPOL\n" & sudo iptables -L -v -n)"
+EXTMGR=$(echo "IPTABLES: managed")
+if command sudo iptables -L -v -n | grep -q 'ufw'; then
+	while IFS= read -r LN; do
+	    (( ${#LN} > MAXLEN )) && MAXLEN=${#LN}
+	done <<< "$EXTMGR"    
+    echo ' ╔='$(printf "%-${MAXLEN}s" | tr ' ' '=')'=╗'
+	while IFS= read -r LN; do
+	    echo " ║ $LN$(printf "%-$(($MAXLEN-${#LN}))s" | tr ' ' ' ') ║"
+	done <<< "$EXTMGR"
+	echo ' ╚='$(printf "%-${MAXLEN}s" | tr ' ' '=')'=╝'
+else
+	while IFS= read -r LN; do
+	    (( ${#LN} > MAXLEN )) && MAXLEN=${#LN}
+	done <<< "$STATUSCMD"
+    echo ' ╔='$(printf "%-${MAXLEN}s" | tr ' ' '=')'=╗'
+	while IFS= read -r LN; do
+	    echo " ║ $LN $(printf "%-$(($MAXLEN-${#LN}))s" | tr ' ' ' ')║"
+	done <<< "$STATUSCMD"
+	echo ' ╚='$(printf "%-${MAXLEN}s" | tr ' ' '=')'=╝'
+fi
+
+unset MAXLEN STATUSCMD EXTMGR

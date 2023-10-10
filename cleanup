@@ -1,0 +1,6 @@
+#!/bin/bash
+
+rm 'services/iptables/logs/'* >'/dev/null' 2>&1
+rm 'services/pchains/logs/'* >'/dev/null' 2>&1
+rm 'services/pchains/geolists/'* >'/dev/null' 2>&1
+rm 'services/ufw/logs/'* >'/dev/null' 2>&1

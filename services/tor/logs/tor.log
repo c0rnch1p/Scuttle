@@ -1,0 +1,6 @@
+Sep 28 15:02:54.659 [warn] Could not bind to 127.0.0.1:9050: Address already in use. Is Tor already running?
+Sep 28 15:02:54.659 [warn] Failed to parse/validate config: Failed to bind one of the listener ports.
+Sep 28 15:02:54.659 [err] Reading config failed--see warnings above.
+Oct 03 02:29:21.234 [warn] Could not bind to 127.0.0.1:9050: Address already in use. Is Tor already running?
+Oct 03 02:29:21.242 [warn] Failed to parse/validate config: Failed to bind one of the listener ports.
+Oct 03 02:29:21.242 [err] Reading config failed--see warnings above.

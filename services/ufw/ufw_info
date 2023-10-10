@@ -1,0 +1,39 @@
+#!/bin/bash
+
+curUFWPol(){
+    if command sudo ufw status verbose | grep -q 'allow (incoming), allow (outgoing), disabled (routed)'&&\
+    command sudo ufw status verbose | grep -q 'Anywhere on lo'; then
+    	CURPOL='up all policy'
+    elif command sudo ufw status verbose | grep -q 'deny (incoming), deny (outgoing), disabled (routed)' &&\
+    command sudo ufw status verbose | grep -q 'Anywhere on lo'; then
+    	CURPOL='drop all policy'
+    elif command sudo ufw status verbose | grep -q 'deny (incoming), allow (outgoing), disabled (routed)'&&\
+    command sudo ufw status verbose | grep -q 'Anywhere on lo'; then
+    	CURPOL='default policy'
+    elif command sudo ufw status verbose | grep -q '23/tcp                     DENY IN     Anywhere' &&\
+	command sudo ufw status verbose | grep -q '80/tcp                     DENY IN     Anywhere'; then
+    	CURPOL='drop insecure protocols'
+    elif command sudo ufw status verbose | grep -q '20/tcp                     DENY IN     Anywhere' &&\
+	command sudo ufw status verbose | grep -q '21/tcp                     DENY IN     Anywhere'; then
+    	CURPOL='drop file transfers'
+    elif command sudo ufw status verbose | grep -q '22/tcp                     DENY IN     Anywhere'; then
+    	CURPOL='drop ssh requests'
+    elif command sudo ufw status verbose | grep -q 'deny (incoming), deny (outgoing), disabled (routed)'; then
+    	CURPOL='network lockdown'
+    else CURPOL='default'
+	fi
+}
+
+MAXLEN=0
+curUFWPol
+STATUSCMD="$(echo -e "UFW: $CURPOL\n" & sudo ufw status verbose)"
+while IFS= read -r LN; do
+    (( ${#LN} > MAXLEN )) && MAXLEN=${#LN}
+done <<< "$STATUSCMD"
+echo ' ╔='$(printf "%-${MAXLEN}s" | tr ' ' '=')'=╗'
+while IFS= read -r LN; do
+    echo " ║ $LN $(printf "%-$(($MAXLEN-${#LN}))s" | tr ' ' ' ')║"
+done <<< "$STATUSCMD"
+echo ' ╚='$(printf "%-${MAXLEN}s" | tr ' ' '=')'=╝'
+
+unset MAXLEN STATUSCMD CURPOL

@@ -1,0 +1,131 @@
+#!/bin/bash
+
+TORINFO='services/tor/tor_info'
+TORLF='services/tor/logs/tor.log'
+
+torMenu(){
+	echo -n "${COLORS[YELLOW]}============${COLORS[RED]} TOR "
+	echo "${COLORS[YELLOW]}============${COLORS[RESET]}"
+	echo '(b) Back	(1) Edit Config'
+	echo '(i) Info	(2) Edit Torsocks'
+	echo '(l) Logs	(3) Set Reloader'
+	echo -e '(q) Exit	(4) Set Increment\n'
+}
+
+torUpdt(){
+	echo "SCUTTLE-$DATE" >>"$TORLF"
+	sudo journalctl | grep 'tor' >>"$TORLF"
+}
+
+torsocksUpdt(){
+	echo "SCUTTLE-$DATE" >>"$TORLF"
+	sudo journalctl | grep 'tor' >>"$TORLF"
+}
+
+editTorConfig(){
+	local CONFIG
+	CONFIG='/etc/tor/torrc'
+	if test -n "$EDITOR"; then sudo ${EDITOR} "$CONFIG"
+	elif test -n "$VISUAL"; then sudo ${VISUAL} "$CONFIG"
+	elif command rnano; then sudo rnano "$CONFIG"
+	elif command vi; then sudo vi "$CONFIG"
+	fi; torUpdt
+}
+
+editTorsocksConfig(){
+	local CONFIG
+	CONFIG='/etc/tor/torsocks.conf'
+	if test -n "$EDITOR"; then sudo ${EDITOR} "$CONFIG"
+	elif test -n "$VISUAL"; then sudo ${VISUAL} "$CONFIG"
+	elif command rnano; then sudo rnano "$CONFIG"
+	elif command vi; then sudo vi "$CONFIG"
+	fi; torsocksUpdt
+}
+
+setReloader(){
+	nodeReloader(){
+		local TORPID KILLTOR
+		KILLTOR=$(sudo kill -9 $TORPID >'/dev/null' 2>&1)
+		while true; do
+			sudo tor --hush >>"$TORLF" 2>&1 &
+			TORPID=$!; sleep "$RELOADINC"; ${KILLTOR} >'/dev/null' 2>&1
+			notify-send -t 9000 '⚐ Node Loaded ⚐'
+		done
+	}
+	echo "${COLORS[YELLOW]}<${COLORS[RED]}c${COLORS[YELLOW]}> cancel"
+	echo "${COLORS[YELLOW]}reloader: ${COLORS[RED]}$NODERELOAD${COLORS[YELLOW]}?"
+	read -p "${COLORS[RED]}ANS ${COLORS[YELLOW]}▸ " ANS
+	if [ "$ANS" == 'c' ]; then return 0
+	fi; sleep 1
+	if command ps -a | grep -w 'tor' >'/dev/null' 2>&1; then
+		sudo killall -9 'tor' >'/dev/null' 2>&1
+	fi
+	if [[ "$ANS" =~ ^(1|y|ya|ye|ta|ok|pl|th).* ]]; then
+		if [[ $(grep 'NODERELOAD=true' 'scuttle.conf') ]]; then
+			nodeReloader & notify-send -t 9000 '⚐ Node Reload ⚐'
+		elif [[ $(grep 'NODERELOAD=false' 'scuttle.conf') ]]; then
+			sudo tor --hush >>"$TORLF" 2>&1 &
+			notify-send -t 9000 '⚐ Default Tor ⚐'
+		fi
+	elif [[ "$ANS" =~ ^(0|n|na|no|nu|al).* ]]; then
+		if [[ $(grep 'NODERELOAD=true' 'scuttle.conf') ]]; then
+			sudo sed -i 's/NODERELOAD=true/NODERELOAD=false/g' 'scuttle.conf'
+			sudo tor --hush >>"$TORLF" 2>&1 &
+			notify-send -t 9000 '⚐ Default Tor ⚐'
+		elif [[ $(grep 'NODERELOAD=false' 'scuttle.conf') ]]; then
+			sudo sed -i 's/NODERELOAD=false/NODERELOAD=true/g' 'scuttle.conf'
+			nodeReloader & notify-send -t 9000 '⚐ Node Reload ⚐'
+		fi
+	fi
+}
+
+reloadIncrement(){
+	while true; do
+		echo "${COLORS[YELLOW]}<${COLORS[RED]}c${COLORS[YELLOW]}> cancel"
+		echo "${COLORS[YELLOW]}increment: ${COLORS[RED]}$RELOADINC${COLORS[YELLOW]}?"
+		read -p "${COLORS[RED]}ANS ${COLORS[YELLOW]}▸ " ANS
+		if [[ "$ANS" =~ ^(1|y|ya|ye|ta|ok|pl|th).* ]]; then break
+		elif [[ "$ANS" =~ ^(0|n|na|no|nu|al).* ]]; then
+			read -p "${COLORS[RED]}secs${COLORS[YELLOW]}: " ANS
+			sed -i "s/RELOADINC=$RELOADINC/RELOADINC=$ANS/g" 'scuttle.conf' & break
+		elif [ "$ANS" == 'c' ]; then break
+		fi; break
+	done; . 'scuttle.conf'
+}
+
+showTorLog(){
+	local LNCNT ADDLINES TACFILE
+	TACFILE='services/tor/logs/tor_reversed.log'
+	sed -i "s/'//g" "$TORLF"
+	[ ! -s "$TORLF" ] && echo "SCUTTLE-$DATE" >>"$TORLF"
+	LNCNT=$(wc -l < "$TORLF")
+	[ "$LNCNT" -gt 2500 ] &&
+		tail -n 2500 "$TORLF" > "$TORLF.tmp" && mv "$TORLF.tmp" "$TORLF"
+	if [ "$LNCNT" -lt 52 ]; then
+		ADDLINES=$((52-LNCNT))
+		for ((i=0; i < ADDLINES; i++)); do
+			echo >> "$TORLF"
+		done
+	fi; tac "$TORLF" > "$TACFILE"
+	bat -l conf --theme ansi --style header,grid "$TACFILE"
+}
+
+torSettings(){
+	local WATCHPID
+	while true; do
+		clear; torMenu
+		read -p "${COLORS[RED]}CTL ${COLORS[YELLOW]}▸ " CTL
+		case "$CTL" in
+			1) editTorConfig;;
+			2) editTorsocksConfig;;
+			3) . 'scuttle.conf'; setReloader;;
+			4) . 'scuttle.conf'; reloadIncrement;;
+			b) break;;
+			i) clear; sudo watch -n 2 "bash ./$TORINFO" &
+				WATCHPID=$!; read -n1 -sr; sudo kill -9 $WATCHPID; clear;;
+			l) showTorLog;;
+			q) handleExit;;
+			*) echo '⚠ invalid choice ⚠';;
+		esac
+	done
+}

@@ -1,0 +1,225 @@
+#!/bin/bash
+
+. 'scuttle.conf'
+. 'services/pchains/freeproxyupdate'
+
+DATE=$(date +%m%d%y-%H%M%S)
+NMAPLF='services/pchains/logs/scan.log'
+PCHAINSLF='services/pchains/logs/pchains.log'
+PCHAINSINFO='services/pchains/pchains_info'
+
+pchainsMenu(){
+	echo -n "${COLORS[YELLOW]}===================${COLORS[RED]} PROXYCHAINS "
+	echo "${COLORS[YELLOW]}===================${COLORS[RESET]}"
+	echo '(b) Back    (1) SOCKS5 List       (5) Open Browser'
+	echo '(i) Info    (2) Anonymous List    (6) Open Emails'
+	echo '(l) Logs    (3) Location List     (7) Open Messages'
+	echo -e '(q) Exit    (4) Edit Config       (8) Nmap Scan\n'
+}
+
+pchainsUpdt(){
+	echo "SCUTTLE-$DATE" >>"$PCHAINSLF"
+	sudo journalctl | grep 'proxychains' >>"$PCHAINSLF"
+}
+
+editPchainsConfig(){
+	local CONFIG
+	CONFIG='/etc/proxychains.conf'
+	if test -n "$EDITOR"; then sudo ${EDITOR} "$CONFIG"
+	elif test -n "$VISUAL"; then sudo ${VISUAL} "$CONFIG"
+	elif command rnano; then sudo rnano "$CONFIG"
+	elif command vi; then sudo vi "$CONFIG"
+	fi; pchainsUpdt
+}
+
+protoList(){
+	local LNCNT URL LIST ADDLINES
+	LIST="services/pchains/geolists/$DATE-$@.txt"
+	URL="https://freeproxyupdate.com/files/txt/$@.txt"
+	wget -c "$URL" -O "$LIST" >'/dev/null' 2>&1
+	LNCNT=$(wc -l < "$LIST")
+	if [ "$LNCNT" -lt 52 ]; then
+		ADDLINES=$((52-LNCNT))
+		for ((i=0; i < ADDLINES; i++)); do
+			echo >> "$LIST"
+		done
+	fi; bat -l conf --theme ansi --style header,grid "$LIST"
+}
+
+locationList(){
+	local PID LOC URL ADDLINES LNCNT LIST LOCATIONS
+	LOCATIONS='services/pchains/locations'
+	while true; do
+		bat -l txt --style header,grid "$LOCATIONS" & PID=$!; wait $PID
+		echo "${COLORS[YELLOW]}<${COLORS[RED]}c${COLORS[YELLOW]}> cancel"
+		read -p "${COLORS[RED]}LOC ${COLORS[YELLOW]}▸ " LOC
+		case "$LOC" in
+			c) break;;
+			*) if command grep -q "$LOC" "$LOCATIONS" >'/dev/null' 2>&1; then
+					LIST="services/pchains/geolists/$DATE-$LOC.txt"
+					URL="https://freeproxyupdate.com/files/txt/$LOC.txt"
+					wget -c "$URL" -O "$LIST" >'/dev/null' 2>&1
+					LNCNT=$(wc -l < "$LIST")
+					if [ "$LNCNT" -lt 52 ]; then ADDLINES=$((52-LNCNT))
+						for ((i=0; i < ADDLINES; i++)); do
+							echo >> "$LIST"
+						done
+					fi; bat -l conf --theme ansi --style header,grid "$LIST"; break
+				else echo '⚠ invalid location ⚠'
+				fi;;
+		esac
+	done
+}
+
+openBrowser(){
+	getBrowser(){
+		WEBBROWSEROLD="$WEBBROWSER"
+		read -p "${COLORS[RED]}BROWSER ${COLORS[YELLOW]}▸ " WEBBROWSER
+		if [ "$WEBBROWSER" == "c" ]; then WEBBROWSER="$WEBBROWSEROLD"
+		else sed -i "1s/.*/WEBBROWSER='$WEBBROWSER'/" 'scuttle.conf'
+		fi
+	}
+	echo "${COLORS[YELLOW]}<${COLORS[RED]}c${COLORS[YELLOW]}> cancel"
+	while true; do
+		if [ -n "$WEBBROWSER" ]; then
+			echo "${COLORS[YELLOW]}use: ${COLORS[RED]}$WEBBROWSER${COLORS[YELLOW]}?"
+			read -p "${COLORS[RED]}ANS ${COLORS[YELLOW]}▸ " ANS
+			if [[ "$ANS" =~ ^(1|y|ya|ye|ta|ok|pl|th).* ]]; then
+				pgrep tor >'/dev/null' 2>&1 && sudo killall -9 tor >'/dev/null' 2>&1
+				sudo tor --hush >'/dev/null' 2>&1 & pchainsUpdt &
+				proxychains "$WEBBROWSER" 'ipleak.net' >>"$PCHAINSLF" 2>&1 & break
+			elif [[ "$ANS" =~ ^(0|n|na|no|nu|al).* ]]; then getBrowser; break
+			elif [ "$ANS" == 'c' ]; then break
+			fi
+		else getBrowser; break
+		fi; . 'scuttle.conf'
+	done
+}
+
+openMailClient(){
+	getMailClient(){
+		MAILCLIENTOLD="$MAILCLIENT"
+		read -p "${COLORS[RED]}MAIL CLIENT ${COLORS[YELLOW]}▸ " MAILCLIENT
+		if [ "$MAILCLIENT" == "c" ]; then MAILCLIENT="$MAILCLIENTOLD"
+		else sed -i "2s/.*/MAILCLIENT='$MAILCLIENT'/" 'scuttle.conf'
+		fi
+	}
+	echo "${COLORS[YELLOW]}<${COLORS[RED]}c${COLORS[YELLOW]}> cancel"
+	while true; do
+		if test -n "$MAILCLIENT"; then
+			echo "${COLORS[YELLOW]}use: ${COLORS[RED]}$MAILCLIENT${COLORS[YELLOW]}?"
+			read -p "${COLORS[RED]}ANS ${COLORS[YELLOW]}▸ " ANS
+			if [[ "$ANS" =~ ^(1|y|ya|ye|ta|ok|pl|th).* ]]; then
+				pgrep tor >'/dev/null' 2>&1 && sudo killall -9 tor >'/dev/null' 2>&1
+				sudo tor --hush >'/dev/null' 2>&1 & pchainsUpdt &
+				proxychains "$MAILCLIENT" >>"$PCHAINSLF" 2>&1 & break
+			elif [[ "$ANS" =~ ^(0|n|na|no|nu|al).* ]]; then getMailClient; break
+			elif [ "$ANS" == 'c' ]; then break
+			fi
+		else getMailClient; break
+		fi; . 'scuttle.conf'
+	done
+}
+
+openMsgClient(){
+	getMsgClient(){
+		MSGCLIENTOLD="$MSGCLIENT"
+		read -p "${COLORS[RED]}MAIL CLIENT ${COLORS[YELLOW]}▸ " MSGCLIENT
+		if [ "$MSGCLIENT" == "c" ]; then MSGCLIENT="$MSGCLIENTOLD"
+		else sed -i "2s/.*/MSGCLIENT='$MSGCLIENT'/" 'scuttle.conf'
+		fi
+	}
+	echo "${COLORS[YELLOW]}<${COLORS[RED]}c${COLORS[YELLOW]}> cancel"
+	while true; do
+		if test -n "$MSGCLIENT"; then
+			echo "${COLORS[YELLOW]}use: ${COLORS[RED]}$MSGCLIENT${COLORS[YELLOW]}?"
+			read -p "${COLORS[RED]}ANS ${COLORS[YELLOW]}▸ " ANS
+			if [[ "$ANS" =~ ^(1|y|ya|ye|ta|ok|pl|th).* ]]; then
+				pgrep tor >'/dev/null' 2>&1 && sudo killall -9 tor >'/dev/null' 2>&1
+				sudo tor --hush >'/dev/null' 2>&1 & pchainsUpdt &
+				proxychains "$MSGCLIENT" >>"$PCHAINSLF" 2>&1 & break
+			elif [[ "$ANS" =~ ^(0|n|na|no|nu|al).* ]]; then getMsgClient; break
+			elif [ "$ANS" == 'c' ]; then break
+			fi
+		else getMsgClient; break
+		fi; . 'scuttle.conf'
+	done
+}
+
+nmapScan(){
+	local LNCNT ADDLINES OUTPUT
+	getArgs(){
+		local NEWARGS
+		read -p "${COLORS[RED]}NMAP ARGS ${COLORS[YELLOW]}▸ " NEWARGS
+		if [ "$NEWARGS" == "c" ]; then [ -n "$NMAPARGSOLD" ] && NMAPARGS="$NMAPARGSOLD"
+		else sed -i "3s|.*|NMAPARGS=\"$NEWARGS\"|" 'scuttle.conf'; NMAPARGS="$NEWARGS"
+		fi
+	}
+	echo "${COLORS[YELLOW]}<${COLORS[RED]}c${COLORS[YELLOW]}> cancel"
+	while true; do
+		if test -n "$NMAPARGS"; then
+			echo "${COLORS[YELLOW]}use: nmap <${COLORS[RED]}$NMAPARGS${COLORS[YELLOW]}>?"
+			read -p "${COLORS[RED]}ANS ${COLORS[YELLOW]}▸ " ANS
+			if [[ "$ANS" =~ ^(1|y|ya|ye|ta|ok|pl|th).* ]]; then
+				pgrep tor >'/dev/null' 2>&1 && sudo killall -9 tor >'/dev/null' 2>&1
+				sudo tor --hush >'/dev/null' 2>&1 &
+				IFS=' ' read -ra NMAPARGS_ARRAY <<< "$NMAPARGS"
+				proxychains -q sudo nmap "${NMAPARGS_ARRAY[@]}" >"$NMAPLF"
+				OUTPUT="$NMAPLF"
+				LNCNT=$(wc -l < "$OUTPUT")
+				if [ "$LNCNT" -lt 52 ]; then
+					ADDLINES=$((52-LNCNT))
+					for ((i=0; i < ADDLINES; i++)); do
+						echo >> "$OUTPUT"
+					done
+				fi
+				bat -l conf --theme ansi --style header,grid "$OUTPUT"; break
+			elif [[ "$ANS" =~ ^(0|n|na|no|nu|al).* ]]; then getArgs; break
+			elif [ "$ANS" == 'c' ]; then break
+			fi; . 'scuttle.conf'
+		else getArgs; break
+		fi
+	done
+}
+
+showPchainsLog(){
+	local LNCNT ADDLINES TACFILE
+	TACFILE='services/pchains/logs/pchains_reversed.log'
+	sed -i "s/'//g" "$PCHAINSLF"
+	[ ! -s "$PCHAINSLF" ] && echo "SCUTTLE-$DATE" >>"$PCHAINSLF"
+	LNCNT=$(wc -l < "$PCHAINSLF")
+	[ "$LNCNT" -gt 2500 ] &&
+		tail -n 2500 "$PCHAINSLF" > "$PCHAINSLF.tmp" && mv "$PCHAINSLF.tmp" "$PCHAINSLF"
+	if [ "$LNCNT" -lt 52 ]; then
+		ADDLINES=$((52-LNCNT))
+		for ((i=0; i < ADDLINES; i++)); do
+			echo >> "$PCHAINSLF"
+		done
+	fi; tac "$PCHAINSLF" > "$TACFILE"
+	bat -l conf --theme ansi --style header,grid "$TACFILE"	
+}
+
+pchainsSettings(){
+	local WATCHPID
+	while true; do
+		clear; pchainsMenu
+		read -p "${COLORS[RED]}CTL ${COLORS[YELLOW]}▸ " CTL
+		case "$CTL" in
+			1) protoList 'socks5';;
+			2) protoList 'anonymous';;
+			3) locationList;;
+			4) editPchainsConfig;;
+			5) openBrowser;;
+			6) openMailClient;;
+			7) openMsgClient;;
+			8) nmapScan;;
+			b) break;;
+			i) clear; sudo watch -n 2 "bash ./$PCHAINSINFO" &
+				WATCHPID=$!; read -n1 -sr; sudo kill -9 $WATCHPID; clear;;
+			l) showPchainsLog;;
+			q) clear; exit 0;;
+			*) echo '⚠ invalid choice ⚠';;
+		esac
+	done
+}
+

@@ -1,0 +1,25 @@
+#!/bin/bash
+
+MAXLEN=0
+if command ps -a | grep 'Isolated' >'/dev/null' 2>&1; then 
+	CURSTAT='active'
+	MODE='mozilla client'
+elif command ps -a | grep -w 'tor' >'/dev/null' 2>&1 &&\
+	command ps -a | grep 'telegram' >'/dev/null' 2>&1; then
+	CURSTAT='active'
+	MODE='telegram messenger'
+else
+	CURSTAT='inactive'
+	MODE='N/A'
+fi
+STATUSCMD="$(echo -e "PROXYCHAINS: $CURSTAT\n\nMODE: $MODE\n")"
+while IFS= read -r LN; do
+    (( ${#LN} > MAXLEN )) && MAXLEN=${#LN}
+done <<< "$STATUSCMD"
+echo ' ╔='$(printf "%-${MAXLEN}s" | tr ' ' '=')'=╗'
+while IFS= read -r LN; do
+    echo " ║ $LN $(printf "%-$(($MAXLEN-${#LN}))s" | tr ' ' ' ')║"
+done <<< "$STATUSCMD"
+echo ' ╚='$(printf "%-${MAXLEN}s" | tr ' ' '=')'=╝'
+
+unset MAXLEN STATUSCMD CURSTAT

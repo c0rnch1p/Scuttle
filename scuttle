@@ -1,0 +1,171 @@
+#!/bin/bash
+
+. 'scuttle.conf'
+
+# wget
+# tor
+# proxychains-ng
+# systemd
+# networkmanager
+# iptables
+# ufw
+# firefox
+# nmap
+# bat
+# highlight
+# wget
+# sudo
+# journalctl
+
+. '/usr/share/scuttle/services/iptables/iptables_ctl'
+. '/usr/share/scuttle/services/ufw/ufw_ctl'
+. '/usr/share/scuttle/services/pchains/pchains_ctl'
+. '/usr/share/scuttle/services/tor/tor_ctl'
+
+# enable daemons
+sudo systemctl reset-failed
+sudo systemctl daemon-reload
+
+if command systemctl is-active ufw | grep -q 'inactive'; then
+	sudo systemctl reload-or-restart ufw || sudo systemctl start ufw
+elif command systemctl is-enabled ufw | grep -q 'disabled'; then
+	sudo systemctl enable ufw
+fi
+
+if command systemctl is-active iptables | grep -q 'inactive'; then
+	sudo systemctl reload-or-restart iptables || sudo systemctl start iptables
+elif command systemctl is-enabled iptables | grep -q 'disabled'; then
+	sudo systemctl enable iptables
+fi
+		
+if command systemctl is-active ip6tables | grep -q 'inactive'; then
+	sudo systemctl reload-or-restart ip6tables || sudo systemctl start ip6tables
+elif command systemctl is-enabled ip6tables | grep -q 'disabled'; then
+	sudo systemctl enable ip6tables
+fi
+
+# disable tor daemon
+if command systemctl is-active tor | grep -q 'active'; then
+	sudo systemctl stop tor
+elif command systemctl is-enabled tor | grep -q 'disabled'; then
+	sudo systemctl disable tor
+fi
+
+# keep connection established
+if command systemctl is-active NetworkManager | grep -q 'inactive'; then
+	sudo systemctl reload-or-restart NetworkManager || sudo systemctl start NetworkManager
+elif command systemctl is-enabled ufw | grep -q 'disabled'; then
+	sudo systemctl enable NetworkManager
+fi
+
+handleExit(){
+    clear; sudo killall -9 'scuttle'
+}; trap handleExit INT HUP TERM QUIT TSTP
+
+FG='GREY'
+BG='GREEN'
+HL='BLUE'
+declare -A COLORS=(
+	[RED]=$(tput setaf 9)
+	[GREEN]=$(tput setaf 112)
+	[YELLOW]=$(tput setaf 143)
+	[BLUE]=$(tput setaf 6)
+	[MAGENTA]=$(tput setaf 126)
+	[PURPLE]=$(tput setaf 133)
+	[CYAN]=$(tput setaf 87)
+	[GREEN2]=$(tput setaf 118)
+	[WHITE]=$(tput setaf 255)
+	[GREY]=$(tput setaf 00)
+	[BOLD]=$(tput bold)
+	[RESET]=$(tput sgr0)
+)
+
+cmpInit(){
+	cmpMain(){
+		local cmpReply
+		cmpReply=$(compgen -W "$2" -- "${cmpWords[cmpCword]}")
+	}
+complete -F cmpMain read
+}
+
+editConfig(){
+	local CONFIG
+	CONFIG='scuttle.conf'
+	if test -n "$EDITOR"; then sudo ${EDITOR} "$CONFIG"
+	elif test -n "$VISUAL"; then sudo ${VISUAL} "$CONFIG"
+	elif command rnano; then sudo rnano "$CONFIG"
+	elif command vi; then sudo vi "$CONFIG"
+	fi
+}
+
+vpnSettings(){
+	while true; do
+		clear
+		echo "${COLORS[YELLOW]}==${COLORS[RED]} VPN ${COLORS[YELLOW]}==${COLORS[RESET]}"
+		echo '(b) Back'
+		echo -e '(q) Quit\n'
+		read -p "${COLORS[RED]}CTL ${COLORS[YELLOW]}▸ " CTL
+		echo "${COLORS[RESET]}"
+		case "$CTL" in
+			b) break;;
+			q) handleExit;;
+		    *) echo '⚠ invalid choice ⚠';;
+	   esac		
+	done
+}
+
+while true; do
+    clear
+    echo "${COLORS[YELLOW]}==${COLORS[RED]} SCUTTLE ${COLORS[YELLOW]}==${COLORS[RESET]}"
+    echo '(1) Firewall'
+    echo '(2) Proxy'
+    echo '(3) VPN'
+    echo '(c) Conf'
+    echo '(i) Info'
+	echo -e '(q) Quit\n'
+    read -p "${COLORS[RED]}CTL ${COLORS[YELLOW]}▸ " CTL
+    echo "${COLORS[RESET]}"
+    case "$CTL" in
+        1) while true; do
+				clear; echo "${COLORS[YELLOW]}==${COLORS[RED]} FIREWALL SERVICE ${COLORS[YELLOW]}==${COLORS[RESET]}"
+					echo '(1) Iptables'
+					echo '(2) UFW'
+					echo '(b) Back'
+					echo -e '(q) Quit\n'
+					read -p "${COLORS[RED]}CTL ${COLORS[YELLOW]}▸ " CTL
+					case "$CTL" in
+						1) iptablesSettings;;
+						2) ufwSettings;;
+						b) clear; break;;
+						q) handleExit;;
+						*) echo '⚠ invalid choice ⚠';;
+					esac
+			done;;
+        2) while true; do
+				clear; echo "${COLORS[YELLOW]}==${COLORS[RED]} PROXY SERVICE ${COLORS[YELLOW]}==${COLORS[RESET]}"
+				echo '(1) Proxychains'
+				echo '(2) TOR'
+				echo '(b) Back'
+				echo -e '(q) Quit\n'
+				read -p "${COLORS[RED]}CTL ${COLORS[YELLOW]}▸ " CTL
+				echo "${COLORS[RESET]}"
+				case "$CTL" in
+					1) pchainsSettings;;
+					2) torSettings;;
+					b) break;;
+					q) handleExit;;
+					*) echo '⚠ invalid choice ⚠';;
+			   esac		
+			done;;
+        3) vpnSettings;;
+        c) editConfig;;
+        i) clear; sudo watch -n 2 'bash ./services/iptables/iptables_info; bash ./services/ufw/ufw_info;\
+        	bash ./services/pchains/pchains_info; bash ./services/tor/tor_info'  &
+			WATCHPID=$!; read -n1 -sr; sudo kill -9 $WATCHPID; clear;;
+		q) handleExit;;
+        *) echo '⚠ invalid choice ⚠';;
+   esac
+done
+
+unset COLORS FG BG HL
+

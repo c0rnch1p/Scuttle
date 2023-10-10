@@ -1,0 +1,109 @@
+#!/bin/bash
+
+DATE=$(date +%m%d%y-%H%M%S)
+UFWLF='services/ufw/logs/ufw.log'
+UFWINFO='services/ufw/ufw_info'
+
+ufwMenu(){
+	echo -n "${COLORS[YELLOW]}==========================${COLORS[RED]} UFW "
+	echo "${COLORS[YELLOW]}==========================${COLORS[RESET]}"
+	echo '(b) Back    (1) Flush       (5) Network Lockdown'
+	echo '(i) Info    (2) Default     (6) Drop SSH Connections'
+	echo '(l) Logs    (3) Up All      (7) Drop File Transfers'
+	echo -e '(q) Exit    (4) Drop All    (8) Drop Insecure Protocols\n'
+}
+
+ufwUpDate(){
+	echo "SCUTTLE-$DATE" >>"$UFWLF"
+	sudo journalctl | grep 'ufw' >>"$UFWLF"
+}
+
+ufwDefault(){
+    sudo ufw default deny incoming
+    sudo ufw default allow outgoing
+}
+
+flushUFW(){
+	echo "y" | sudo ufw reset
+	sudo ufw enable
+	sudo ufw reload
+}
+
+UFWbtw() {
+    sudo ufw allow in on lo
+    sudo ufw allow out on lo
+    sudo ufw allow out 51820/tcp
+    sudo ufw allow out 1194/tcp
+    sudo ufw allow out 9050/tcp
+    sudo ufw allow out 443/tcp
+    sudo ufw allow out 22/tcp
+}
+
+showUfwLog(){
+	local LNCNT ADDLINES TACFILE
+	TACFILE='services/ufw/logs/ufw_reversed.log'
+	sed -i "s/'//g" "$UFWLF"	
+	[ ! -s "$UFWLF" ] && echo "SCUTTLE-$DATE" >>"$UFWLF"
+	LNCNT=$(wc -l < "$UFWLF")
+	[ "$LNCNT" -gt 2500 ] &&
+		tail -n 2500 "$UFWLF" >"$UFWLF.tmp" && mv "$UFWLF.tmp" "$UFWLF"
+	if [ "$LNCNT" -lt 52 ]; then ADDLINES=$((52-LNCNT))
+		for ((i=0; i < ADDLINES; i++)); do
+			echo >> "$UFWLF"
+		done
+	fi; tac "$UFWLF" >"$TACFILE"
+	bat -l conf --theme ansi --style header,grid "$TACFILE"
+}
+
+ufwSettings() {
+    local WATCHPID
+    while true; do
+		clear; ufwMenu
+		read -p "${COLORS[RED]}CTL ${COLORS[YELLOW]}▸ " CTL
+        case "$CTL" in
+            1) ufwUpDate; flushUFW >>"$UFWLF"
+                echo -e "\n ${COLORiS[YELLOW]}⚐${COLORS[RED]} FIREWALL FLUSHED ${COLORS[YELLOW]}⚐"
+                sleep 2;;
+            2) ufwUpDate; flushUFW >>"$UFWLF"; ufwDefault >>"$UFWLF"; UFWbtw >>"$UFWLF"
+                echo -e "\n ${COLORS[YELLOW]}⚐${COLORS[RED]} DEFAULT POLICY SET ${COLORS[YELLOW]}⚐"
+                sleep 2;;
+            3) ufwUpDate; flushUFW >>"$UFWLF"
+                sudo ufw default allow incoming >>"$UFWLF"
+                sudo ufw default allow outgoing >>"$UFWLF"; UFWbtw >>"$UFWLF"
+                echo -e "\n ${COLORS[YELLOW]}⚐${COLORS[RED]} ACCEPTING ALL REQUESTS ${COLORS[YELLOW]}⚐"
+                sleep 2;;
+            4) ufwUpDate; flushUFW >>"$UFWLF"
+                sudo ufw default deny incoming >>"$UFWLF"
+                sudo ufw default deny outgoing >>"$UFWLF"; UFWbtw >>"$UFWLF"
+                echo -e "\n ${COLORS[YELLOW]}⚐${COLORS[RED]} DROPPING ALL CONNECTIONS ${COLORS[YELLOW]}⚐"
+                sleep 2;;
+            5) ufwUpDate; flushUFW >>"$UFWLF"; ufwDefault >>"$UFWLF"
+                sudo ufw default deny incoming >>"$UFWLF"
+                sudo ufw default deny outgoing >>"$UFWLF"
+                echo -e "\n ${COLORS[YELLOW]}⚐${COLORS[RED]} NETWORK ON LOCKDOWN ${COLORS[YELLOW]}⚐"
+                sleep 2;;
+            6) ufwUpDate; flushUFW >>"$UFWLF"; ufwDefault >>"$UFWLF"
+                sudo ufw deny 22/tcp >>"$UFWLF"
+                echo -e "\n ${COLORS[YELLOW]}⚐${COLORS[RED]} DROPPING SSH CONNECTIONS ${COLORS[YELLOW]}⚐"
+                sleep 2;;
+            7) ufwUpDate; flushUFW >>"$UFWLF"; ufwDefault >>"$UFWLF"
+                sudo ufw deny 20/tcp >>"$UFWLF"
+                sudo ufw deny 21/tcp >>"$UFWLF"
+                sudo ufw deny out to any port 20,21 proto tcp >>"$UFWLF"
+                echo -e "\n ${COLORS[YELLOW]}⚐${COLORS[RED]} DROPPING FILE TRANSFERS ${COLORS[YELLOW]}⚐"
+                sleep 2;;
+            8) ufwUpDate; flushUFW >>"$UFWLF"; ufwDefault >>"$UFWLF"
+                sudo ufw deny 23/tcp >>"$UFWLF"
+                sudo ufw deny 80/tcp >>"$UFWLF"
+                echo -e "\n ${COLORS[YELLOW]}⚐${COLORS[RED]} DROPPING INSECURE PROTOCOLS ${COLORS[YELLOW]}⚐"
+                sleep 2;;				
+			b) break;;
+			i) clear; sudo watch -n 2 "bash ./$UFWINFO" &
+				WATCHPID=$!; read -n1 -sr; sudo kill -9 $WATCHPID; clear;;
+			l) showUfwLog;;
+			q) clear; exit 0;;
+			*) echo '⚠ invalid choice ⚠';;
+        esac
+    done
+}
+

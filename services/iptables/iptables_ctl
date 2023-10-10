@@ -1,0 +1,127 @@
+#!/bin/bash
+
+DATE=$(date +%m%d%y-%H%M%S)
+IPTABLESLF='services/iptables/logs/iptables.log'
+IPTABLESINFO='services/iptables/iptables_info'
+
+iptablesMenu(){
+	echo -n "${COLORS[YELLOW]}=======================${COLORS[RED]} IPTABLES "
+	echo "${COLORS[YELLOW]}=======================${COLORS[RESET]}"
+	echo '(b) Back    (1) Flush       (5) Network Lockdown'
+	echo '(i) Info    (2) Default     (6) Drop SSH Connections'
+	echo '(l) Logs    (3) Up All      (7) Drop File Transfers'
+	echo -e '(q) Exit    (4) Drop All    (8) Drop Insecure Protocols\n'
+}
+
+iptablesUpDate(){
+	echo "SCUTTLE-$DATE" >>"$IPTABLESLF"
+	sudo journalctl | grep 'iptables' >>"$IPTABLESLF"
+}
+
+
+reloadIptables() {
+    sudo iptables -v -F; sudo iptables -v -X
+    sudo killall -9 dirmngr >'/dev/null' 2>&1
+}
+
+reloadIp6tables(){
+    sudo ip6tables -v -F; sudo ip6tables -v -X
+    sudo killall -9 dirmngr >'/dev/null' 2>&1
+}
+
+iptablesDefault(){
+	sudo iptables -v -P INPUT DROP
+	sudo iptables -v -P FORWARD DROP
+	sudo iptables -v -P OUTPUT ACCEPT
+}
+
+flushIptables() {
+	reloadIptables
+    reloadIp6tables
+    sudo iptables -v -F; sudo iptables -v -X
+	sudo killall -9 dirmngr >'/dev/null' 2>&1
+}
+
+iptablesBtw(){
+    sudo iptables -v -A INPUT -i lo -j ACCEPT
+    sudo iptables -v -A FORWARD -i lo -j ACCEPT
+    sudo iptables -v -A OUTPUT -o lo -j ACCEPT
+    # "just watch the door, dont worry about whats going on inside"
+    sudo iptables -v -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    sudo iptables -v -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT    
+    sudo iptables -v -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    # "if someone was inside and went out momentarily, let them back in"
+    sudo iptables -v -A OUTPUT -p tcp --dport 51820 -j ACCEPT
+    sudo iptables -v -A OUTPUT -p tcp --dport 1194 -j ACCEPT    
+    sudo iptables -v -A OUTPUT -p tcp --dport 9050 -j ACCEPT    
+    sudo iptables -v -A OUTPUT -p tcp --dport 443 -j ACCEPT
+    sudo iptables -v -A OUTPUT -p tcp --dport 22 -j ACCEPT
+    # "heres some protection in case of attackers"
+}
+
+showIptablesLog(){
+	local LNCNT ADDLINES TACFILE
+	TACFILE='services/iptables/logs/iptables_reversed.log'
+	sed -i "s/'//g" "$IPTABLESLF"	
+	[ ! -s "$IPTABLESLF" ] && echo "SCUTTLE-$DATE" >>"$IPTABLESLF"
+	LNCNT=$(wc -l < "$IPTABLESLF")
+	[ "$LNCNT" -gt 2500 ] &&
+		tail -n 2500 "$IPTABLESLF" > "$IPTABLESLF.tmp" && mv "$IPTABLESLF.tmp" "$IPTABLESLF"
+	if [ "$LNCNT" -lt 52 ]; then
+		ADDLINES=$((52-LNCNT))
+		for ((i=0; i < ADDLINES; i++)); do
+			echo >> "$IPTABLESLF"
+		done
+	fi;	tac "$IPTABLESLF" > "$TACFILE"
+	bat -l conf --theme ansi --style header,grid "$TACFILE"
+}
+
+iptablesSettings(){
+    local WATCHPID
+    while true; do
+		clear; iptablesMenu
+		read -p "${COLORS[RED]}CTL ${COLORS[YELLOW]}▸ " CTL
+        case "$CTL" in
+			1) iptablesUpDate; flushIptables >>"$IPTABLESLF"
+				echo -e "\n ${COLORS[YELLOW]}⚐${COLORS[RED]} FIREWALL FLUSHED ${COLORS[YELLOW]}⚐"
+				sleep 2;;
+		    2) iptablesUpDate; flushIptables >>"$IPTABLESLF"
+		    	iptablesDefault >>"$IPTABLESLF"; iptablesBtw >>"$IPTABLESLF"
+				echo -e "\n ${COLORS[YELLOW]}⚐${COLORS[RED]} DEFAULT POLICY SET ${COLORS[YELLOW]}⚐"
+				sleep 2;;
+		    3) iptablesUpDate; flushIptables >>"$IPTABLESLF"; iptablesDefault >>"$IPTABLESLF"
+				sudo iptables -v -P INPUT ACCEPT >>"$IPTABLESLF"
+				sudo iptables -v -P FORWARD ACCEPT >>"$IPTABLESLF"; iptablesBtw >>"$IPTABLESLF"
+				echo -e "\n ${COLORS[YELLOW]}⚐${COLORS[RED]} ACCEPTING ALL REQUESTS ${COLORS[YELLOW]}⚐"
+				sleep 2;;
+		    4) iptablesUpDate; flushIptables >>"$IPTABLESLF"; iptablesDefault >>"$IPTABLESLF"
+		    	sudo iptables -v -P OUTPUT DROP >>"$IPTABLESLF"; iptablesBtw >>"$IPTABLESLF"
+				echo -e "\n ${COLORS[YELLOW]}⚐${COLORS[RED]} DROPPING ALL CONNECTIONS ${COLORS[YELLOW]}⚐"
+				sleep 2;;
+		    5) iptablesUpDate; flushIptables >>"$IPTABLESLF"; iptablesDefault >>"$IPTABLESLF"
+		    	sudo iptables -v -P OUTPUT DROP >>"$IPTABLESLF"
+				echo -e "\n ${COLORS[YELLOW]}⚐${COLORS[RED]} NETWORK ON LOCKDOWN ${COLORS[YELLOW]}⚐"
+				sleep 2;;
+		    6) iptablesUpDate; flushIptables >>"$IPTABLESLF"; iptablesDefault >>"$IPTABLESLF"
+		    	sudo iptables -v -A INPUT -p tcp --dport 22 -j DROP >>"$IPTABLESLF"
+				echo -e "\n ${COLORS[YELLOW]}⚐${COLORS[RED]} DROPPING SSH CONNECTIONS ${COLORS[YELLOW]}⚐"
+				sleep 2;;
+		    7) iptablesUpDate; flushIptables >>"$IPTABLESLF"; iptablesDefault >>"$IPTABLESLF"
+				sudo iptables -v -A INPUT -p tcp --dport 20:21 -j DROP >>"$IPTABLESLF"
+				echo -e "\n ${COLORS[YELLOW]}⚐${COLORS[RED]} DROPPING FILE TRANSFERS ${COLORS[YELLOW]}⚐"
+				sleep 2;;
+		    8) iptablesUpDate; flushIptables >>"$IPTABLESLF"; iptablesDefault >>"$IPTABLESLF"
+				sudo iptables -v -A INPUT -p tcp --dport 23 -j DROP >>"$IPTABLESLF"
+				sudo iptables -v -A INPUT -p tcp --dport 80 -j DROP >>"$IPTABLESLF"
+				echo -e "\n ${COLORS[YELLOW]}⚐${COLORS[RED]} DROPPING INSECURE PROTOCOLS ${COLORS[YELLOW]}⚐"
+				sleep 2;;				
+			b) break;;
+			i) clear; sudo watch -n 2 "bash ./$IPTABLESINFO" &
+				WATCHPID=$!; read -n1 -sr; sudo kill -9 $WATCHPID; clear;;
+			l) showIptablesLog;;
+			q) clear; exit 0;;
+			*) echo '⚠ invalid choice ⚠';;
+        esac
+    done
+}
+
