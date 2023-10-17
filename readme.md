@@ -13,11 +13,10 @@ Tor: https://www.torproject.org
 OpenVPN: https://openvpn.net  
 WireGuard: https://www.wireguard.com
 ##### Description
-Scuttle is a comprehensive shell program designed to simplify the use and management of
-various Linux command line networking utilities. With a focus on effortlessly setting
-up configurations and initiating processes, Scuttle acts as a wrapper for UFW, IPTables,
+Scuttle is a shell program for linux designed to simplify the use and management of
+various command line networking utilities. Scuttle acts as a wrapper for UFW, IPTables,
 Proxychains, Tor, OpenVPN, and WireGuard. Its expansive functionality makes managing
-network tools more accessible and efficient for users.
+network tools more efficient and accessible.
 ##
 #### Installation
 ##
