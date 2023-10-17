@@ -47,15 +47,15 @@ chmod 764 'install.sh'
 ./'install.sh'
 ````
 ##### Windows
-To use Scuttle on Windows, its recommended to utilize the Windows Subsystem for Linux 
-(WSL) or a Linux VM. If only using Git Bash, download it if not already installed from 
+To use Scuttle on Windows, its recommended to utilize the Windows Subsystem for Linux
+(WSL) or a Linux VM. If only using Git Bash, download it if not already installed from
 'https://git-scm.com/download/win.' Once ready, open Git Bash and follow the steps for
 MacOS and Linux.
 ##
 #### Notes
 ##
 ##### Legality Concerns
-If any of the dependancies for this wrapper arent available for legal reasons its
-strongly recommended consider further measures such as using an isolated VM,
-container or live environment of some kind with its own public IP address.
+If any of the dependancies for this wrapper arent available for legal reasons its strongly
+recommended consider further measures such as using an isolated VM, container or live
+environment of some kind with its own public IP address.
 ##
