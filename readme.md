@@ -2,16 +2,16 @@
 #### General
 ## 
 #### Details
-Size: 1.2M  
-Arch: x86_64  
-Vers: v01.01.01
+▸ Size: 1.2M  
+▸ Arch: x86_64  
+▸ Vers: v01.01.01
 ##### Weblinks
-UFW: https://launchpad.net/ufw  
-IPTables: https://www.netfilter.org/projects/iptables  
-Proxychains: https://proxychains.sourceforge.net  
-Tor: https://www.torproject.org  
-OpenVPN: https://openvpn.net  
-WireGuard: https://www.wireguard.com
+▸ UFW: https://launchpad.net/ufw  
+▸ IPTables: https://www.netfilter.org/projects/iptables  
+▸ Proxychains: https://proxychains.sourceforge.net  
+▸ Tor: https://www.torproject.org  
+▸ OpenVPN: https://openvpn.net  
+▸ WireGuard: https://www.wireguard.com
 ##### Description
 Scuttle is a shell program for linux designed to simplify the use and management of
 various command line networking utilities. Scuttle acts as a wrapper for UFW, IPTables,
@@ -21,19 +21,19 @@ network tools more efficient and accessible.
 #### Installation
 ##
 ##### Depends
-• bat: Clone of cat with syntax highlighting  
-• firefox: Free and open source web browser  
-• highlight: Universal syntax highlighter  
-• iptables: Administration tool for packet filtering and NAT  
-• journalctl: Query the systemd journal  
-• networkmanager: Dynamic network control and configuration  
-• nmap: Network exploration tool and port scanner  
-• proxychains(-ng): redirect TCP traffic of running programs  
-• sudo: Execute a command as another user  
-• systemd: Suite providing system and service manager  
-• tor: Free software for enabling anonymous communication  
-• ufw: Uncomplicated Firewall  
-• wget: The non-interactive network downloader
+▸ bat: Clone of cat with syntax highlighting  
+▸ firefox: Free and open source web browser  
+▸ highlight: Universal syntax highlighter  
+▸ iptables: Administration tool for packet filtering and NAT  
+▸ journalctl: Query the systemd journal  
+▸ networkmanager: Dynamic network control and configuration  
+▸ nmap: Network exploration tool and port scanner  
+▸ proxychains(-ng): redirect TCP traffic of running programs  
+▸ sudo: Execute a command as another user  
+▸ systemd: Suite providing system and service manager  
+▸ tor: Free software for enabling anonymous communication  
+▸ ufw: Uncomplicated Firewall  
+▸ wget: The non-interactive network downloader
 ##### Mac & Linux
 1. Open a terminal.
 2. Clone this repository:
