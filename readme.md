@@ -2,15 +2,15 @@
 #### General
 ## 
 #### Details
-• Size: 1.2M  
 • Arch: x86_64  
+• Size: 1.2M  
 • Vers: v01.01.01
 ##### Weblinks
-• UFW: https://launchpad.net/ufw  
 • IPTables: https://www.netfilter.org/projects/iptables  
+• OpenVPN: https://openvpn.net  
 • Proxychains: https://proxychains.sourceforge.net  
 • Tor: https://www.torproject.org  
-• OpenVPN: https://openvpn.net  
+• UFW: https://launchpad.net/ufw  
 • WireGuard: https://www.wireguard.com
 ##### Description
 Scuttle is a shell program for linux designed to simplify the use and management of
