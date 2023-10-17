@@ -35,22 +35,21 @@ network tools more efficient and accessible.
 • ufw: Uncomplicated Firewall  
 • wget: The non-interactive network downloader
 ##### Mac & Linux
-1. Open a terminal.
-2. Clone this repository:
+Open a terminal and clone this repo:
 ````shell
 git clone 'https://github.com/c0rNCh1p/scuttle.git' ||
 git clone 'https://gitlab.com/c0rNCh1p/scuttle.git'
 ````
-3. Change to the build directory, make sure the script is executable and run it:
+Change to the build directory, make sure the script is executable and run it:
 ````shell
 cd 'scuttle'
 chmod 764 'install.sh'
 ./'install.sh'
 ````
 ##### Windows
-To use Scuttle on Windows, it's recommended to utilize the Windows Subsystem for Linux 
+To use Scuttle on Windows, its recommended to utilize the Windows Subsystem for Linux 
 (WSL) or a Linux VM. If only using Git Bash, download it if not already installed from 
-https://git-scm.com/download/win. Once ready, open Git Bash and follow the steps for
+'https://git-scm.com/download/win.' Once ready, open Git Bash and follow the steps for
 MacOS and Linux.
 ##
 #### Notes
