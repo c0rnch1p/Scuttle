@@ -13,7 +13,7 @@ Scuttle is a comprehensive shell program designed to simplify the use and manage
 various Linux command line networking utilities. With a focus on effortlessly setting
 up configurations and initiating processes, Scuttle acts as a wrapper for UFW, IPTables,
 Proxychains, Tor, OpenVPN, and WireGuard. Its expansive functionality makes managing
-network tools more accessible and efficient for users.
+network tools more accessible and efficient for users
 ##
 #### Installation
 ##
