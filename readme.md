@@ -28,12 +28,12 @@ network tools more efficient and accessible.
 • journalctl: Query the systemd journal  
 • networkmanager: Dynamic network control and configuration  
 • nmap: Network exploration tool and port scanner  
-• proxychains(-ng): redirect TCP traffic of running programs  
+• proxychains(-ng): Redirect TCP traffic of running programs  
 • sudo: Execute a command as another user  
 • systemd: Suite providing system and service manager  
 • tor: Free software for enabling anonymous communication  
 • ufw: Uncomplicated Firewall  
-• wget: The non-interactive network downloader
+• wget: The non interactive network downloader
 ##### Mac & Linux
 Open a terminal and clone this repo:
 ````shell
