@@ -13,7 +13,7 @@
 • UFW: https://launchpad.net/ufw  
 • WireGuard: https://www.wireguard.com
 ##### Description
-Scuttle is a shell program for linux designed to simplify the use and management of
+Scuttle is a shell program for Linux designed to simplify the use and management of
 various command line networking utilities. Scuttle acts as a wrapper for UFW, IPTables,
 Proxychains, Tor, OpenVPN, and WireGuard. Its expansive functionality makes managing
 network tools more efficient and accessible. Please do not attempt installing this program
@@ -52,7 +52,7 @@ MacOS and Linux.
 #### Notes
 ##
 ##### Legality Concerns
-If any of the dependancies for this wrapper arent available for legal reasons its strongly
+If any of the dependencies for this wrapper arent available for legal reasons its strongly
 recommended consider further measures such as using an isolated VM, container or live
 environment of some kind with its own public IP address.
 ##
