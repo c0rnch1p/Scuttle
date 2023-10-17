@@ -1,6 +1,10 @@
 ##  
 #### General
 ## 
+#### Details
+Size: 1.2M  
+Arch: x86_64  
+Vers: v01.01.01
 ##### Weblinks
 UFW: https://launchpad.net/ufw  
 IPTables: https://www.netfilter.org/projects/iptables  
